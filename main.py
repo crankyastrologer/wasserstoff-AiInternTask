@@ -4,8 +4,6 @@ from fastapi import FastAPI, UploadFile, Depends, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from dotenv import load_dotenv
-load_dotenv()
 
 from db.mongo import (
     get_specific_documents,
