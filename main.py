@@ -1,9 +1,11 @@
+import os
 from datetime import timedelta
 from typing import Annotated, List
 from fastapi import FastAPI, UploadFile, Depends, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
+
 
 from db.mongo import (
     get_specific_documents,
@@ -46,7 +48,7 @@ class FormData(BaseModel):
 
 
 # CORS configuration
-origins = ["http://localhost:5173"]
+origins = [os.getenv("ORIGIN")]
 
 app.add_middleware(
     CORSMiddleware,
