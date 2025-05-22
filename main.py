@@ -69,6 +69,25 @@ async def create_upload_files(
     files: list[UploadFile],
     current_user: Annotated[User, Depends(get_current_user)]
 ):
+    """
+    Process and store multiple uploaded files in the vector database.
+
+    Supported formats:
+    - PDF documents (processed with text extraction)
+    - Images (JPG, JPEG, PNG - processed with OCR)
+
+    Args:
+        files: List of uploaded files from client
+        current_user: Authenticated user object from JWT
+
+    Returns:
+        dict: List of successfully processed filenames
+
+    Raises:
+        HTTPException:
+            400 - Unsupported file type
+            500 - Vector store insertion error
+    """
     parsed_documents = []
     uploaded_filenames = []
 
@@ -102,6 +121,22 @@ async def create_upload_files(
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
+    """
+       Authenticate user and generate JWT access token.
+
+       Uses OAuth2 password flow for standard authentication.
+       Token expires after 30 minutes by default (configurable).
+
+       Args:
+           form_data: Standard OAuth2 form containing username/password
+
+       Returns:
+           Token: Object containing JWT access token
+
+       Raises:
+           HTTPException:
+               401 - Invalid credentials
+       """
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -118,6 +153,22 @@ async def login_for_access_token(
 
 @app.post("/register/", status_code=201)
 def register(user: Annotated[UserRegister, Form()]):
+    """
+      Register a new user account.
+
+      Creates new user in database with hashed password.
+      Returns same format as login for immediate authentication.
+
+      Args:
+          user: User registration data (username, password, etc.)
+
+      Returns:
+          Token: Access token for newly registered user
+
+      Raises:
+          HTTPException:
+              500 - Registration failed (username taken, etc.)
+      """
     try:
         return register_user(user)
     except Exception as e:
@@ -129,6 +180,20 @@ async def add_documents(
     document_ids: List[str],
     current_user: Annotated[User, Depends(get_current_user)]
 ):
+    """
+        Add specific documents to user's vector store.
+
+        Args:
+            document_ids: List of MongoDB document IDs to add
+            current_user: Authenticated user
+
+        Returns:
+            list: Retrieved document objects
+
+        Raises:
+            HTTPException:
+                500 - Database retrieval error
+        """
     try:
         username = current_user.username
         documents = get_specific_documents(username, document_ids)
@@ -140,6 +205,19 @@ async def add_documents(
 @app.get("/vectorstore/get_documents")
 def get_documents(current_user: Annotated[User, Depends(get_current_user)]):
     try:
+        """
+          Retrieve all documents belonging to the authenticated user.
+
+          Args:
+              current_user: Authenticated user
+
+          Returns:
+              dict: { "documents": list of all user's documents }
+
+          Raises:
+              HTTPException: 
+                  500 - Database error
+          """
         username = current_user.username
         documents = list(get_all_documents(username))
         return {"documents": documents}
@@ -152,6 +230,28 @@ def query_vectorstore(
     body: QueryRequest,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    """
+      Query documents using RAG (Retrieval-Augmented Generation).
+
+      Process flow:
+      1. Refines the raw query for better search
+      2. Retrieves relevant documents (either all or filtered by IDs)
+      3. Generates response using the RAG model
+
+      Args:
+          body: Contains query text and optional document IDs filter
+          current_user: Authenticated user
+
+      Returns:
+          dict: {
+              "documents": list of relevant documents,
+              "response": generated answer
+          }
+
+      Raises:
+          HTTPException:
+              500 - Query processing failed
+      """
     try:
         username = current_user.username
         refined_query = refine_query(body.query)
@@ -177,6 +277,20 @@ def delete_document(
     document_id: str,
     current_user: Annotated[User, Depends(get_current_user)]
 ):
+    """
+    Delete a specific document from both vector store and database.
+
+    Args:
+        document_id: MongoDB ID of document to delete
+        current_user: Authenticated user
+
+    Returns:
+        dict: Success message
+
+    Raises:
+        HTTPException:
+            500 - Deletion failed
+    """
     try:
         username = current_user.username
         delete_document_from_vectorstore(document_id, username)
@@ -191,6 +305,22 @@ def create_themes(
     current_user: Annotated[User, Depends(get_current_user)],
     request: DocumentIDsRequest
 ):
+    """
+       Extract key themes from specified documents.
+
+       Uses NLP processing to identify common themes/topics.
+
+       Args:
+           current_user: Authenticated user
+           request: Contains list of document IDs to analyze
+
+       Returns:
+           dict: { "themes": list of identified themes }
+
+       Raises:
+           HTTPException:
+               500 - Theme extraction failed
+       """
     try:
         username = current_user.username
         themes = find_themes(request.document_ids, username)
