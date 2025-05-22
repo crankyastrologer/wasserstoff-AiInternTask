@@ -18,7 +18,9 @@ message_cleaning = [
         "You are a helpful assistant that cleans up OCR-scanned text from documents. "
         "Your task is to refine the text by correcting spelling, fixing broken words or lines, "
         "removing artifacts, and making it readable — while preserving the original meaning. "
-        "Do not change names or factual content.",
+        "Do not change names or factual content."
+        "Merge title and paragraph text into one paragraph for easier storage in vector store."
+        "only return the refined text nothing else",
     ),
     ("human", "{paragraph}"),
 ]
