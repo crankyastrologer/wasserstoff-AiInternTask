@@ -80,12 +80,12 @@ Instructions:
 - Identify recurring or coherent themes across the entire document.
 - Merge overlapping or similar themes.
 - For each theme, write a concise summary and list the pages that contribute evidence to it.
-- Make sure the answer is in markdown format.
+- Make sure the answer is in markdown format and properly formatted to be read by a human.
 
 Output Format:
 (
-  "document_title": "{{document_title}}",
-  "document_themes": [
+  document_title: {{document_title}},
+  document_themes: [
    ( 
       "title": "<Theme Title>",
       "summary": "<Theme summary across the document>",
